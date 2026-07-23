@@ -128,6 +128,9 @@
   .cat.econ .cat-label{color:var(--gold-bright);}
   .cat.social .cat-label{color:var(--teal);}
   .cat.env .cat-label{color:#8CB3D9;}
+  .cat.gov .cat-label{color:#C2695A;}
+  .cat.health .cat-label{color:#8CB3D9;}
+  .cat.labor .cat-label{color:var(--gold-bright);}
 
   .row{
     display:flex;justify-content:space-between;align-items:baseline;
@@ -169,6 +172,76 @@
     border-radius:5px;padding:10px 14px;margin-bottom:20px;
   }
   .banner b{color:var(--ink);}
+
+  /* ---------- COMPARE MODE ---------- */
+  .compare-toggle{
+    margin-top:8px;background:rgba(17,26,44,0.85);border:1px solid var(--border);color:var(--ink-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
+    padding:8px 12px;border-radius:4px;cursor:pointer;width:190px;text-align:left;backdrop-filter:blur(4px);
+    transition:border-color 0.15s ease,color 0.15s ease;
+  }
+  .compare-toggle:hover{border-color:var(--gold);color:var(--ink);}
+  .compare-toggle.active{border-color:var(--gold);color:var(--gold-bright);background:rgba(201,162,39,0.12);}
+
+  .year-row{margin-top:8px;width:190px;display:flex;align-items:center;gap:8px;}
+  .year-row label{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--ink-faint);
+  }
+  .year-row select{
+    flex:1;background:rgba(17,26,44,0.85);border:1px solid var(--border);color:var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:6px 8px;border-radius:4px;cursor:pointer;
+    backdrop-filter:blur(4px);
+  }
+  .year-row select:hover{border-color:var(--gold);}
+  .year-badge{
+    display:inline-block;margin-left:6px;padding:1px 6px;border-radius:3px;font-size:9.5px;letter-spacing:0.5px;
+    background:rgba(201,162,39,0.15);color:var(--gold-bright);border:1px solid rgba(201,162,39,0.35);
+    text-transform:uppercase;vertical-align:middle;
+  }
+
+  .compare-chips{margin-top:8px;width:190px;display:flex;flex-direction:column;gap:5px;}
+  .compare-chip{
+    display:flex;align-items:center;gap:7px;background:rgba(17,26,44,0.85);border:1px solid var(--border);
+    border-radius:4px;padding:6px 9px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);
+    backdrop-filter:blur(4px);
+  }
+  .compare-chip .swatch{width:9px;height:9px;border-radius:50%;flex:none;}
+  .compare-chip .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .compare-chip .rm{cursor:pointer;color:var(--ink-faint);font-size:13px;line-height:1;padding:0 2px;}
+  .compare-chip .rm:hover{color:var(--red-soft);}
+  .compare-hint-row{width:190px;margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-faint);letter-spacing:0.5px;}
+
+  .country.compared{stroke-width:2px;}
+
+  .compare-head-row{display:flex;gap:10px;margin-bottom:4px;}
+  .compare-head-item{
+    flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink);
+    display:flex;align-items:center;gap:6px;
+  }
+  .compare-head-item .swatch{width:9px;height:9px;border-radius:50%;flex:none;}
+  .compare-head-item .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .crow{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .crow:last-child{border-bottom:none;}
+  .crow .clabel{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-dim);margin-bottom:6px;}
+  .crow .cvals{display:flex;gap:10px;margin-bottom:5px;}
+  .crow .cval{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink);font-weight:500;}
+  .crow .cval.na{color:var(--ink-faint);}
+  .crow .cyr{color:var(--ink-faint);font-size:10px;margin-left:4px;}
+  svg.spark{display:block;width:100%;height:64px;margin-top:2px;}
+
+  .compare-empty-note{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-faint);
+    padding:10px 0;line-height:1.7;
+  }
+
+  .export-row{display:flex;gap:8px;margin-top:14px;}
+  .export-btn{
+    background:transparent;border:1px solid var(--border);color:var(--ink-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+    padding:6px 10px;border-radius:4px;cursor:pointer;transition:border-color 0.15s ease,color 0.15s ease;
+  }
+  .export-btn:hover{border-color:var(--gold);color:var(--gold-bright);}
 </style>
 </head>
 <body>
@@ -187,6 +260,14 @@
       <div class="search-wrap">
         <input id="search" type="text" placeholder="Find a country…" list="country-list" autocomplete="off">
         <datalist id="country-list"></datalist>
+        <div class="year-row">
+          <label for="year-select">Year</label>
+          <select id="year-select"><option value="latest">Latest</option></select>
+        </div>
+        <button id="compare-toggle" class="compare-toggle" type="button">✦ Compare mode: off</button>
+        <button id="chart-toggle" class="compare-toggle" type="button">📈 Trend charts: off</button>
+        <div id="compare-chips" class="compare-chips"></div>
+        <div id="compare-hint-row" class="compare-hint-row" style="display:none;">Click up to 4 countries to compare</div>
       </div>
       <svg id="globe-svg" viewBox="0 0 640 640"></svg>
       <div class="hint" id="hint">Drag to rotate · Click a country to open its dossier</div>
@@ -203,7 +284,7 @@
   </main>
 
   <footer>
-    <span>Indicators sourced live from the World Bank Open Data API · World Bank, IMF &amp; UN definitions</span>
+    <span>Indicators sourced live from the World Bank, WHO, and OECD APIs · Governance data via Worldwide Governance Indicators · OECD coverage limited to member/partner countries</span>
     <span>Prototype · not for citation without verifying against primary sources</span>
   </footer>
 
@@ -254,8 +335,37 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
       {code:'EG.USE.PCAP.KG.OE', label:'Energy use per capita', fmt:'oe'},
       {code:'ER.H2O.FWTL.ZS', label:'Freshwater withdrawal', fmt:'pct'},
       {code:'AG.LND.AGRI.ZS', label:'Agricultural land', fmt:'pct'}
+    ]},
+    {key:'gov', label:'Governance', cls:'gov', indicators:[
+      // Worldwide Governance Indicators — published through the same World Bank
+      // API as everything above (source dataset 3), estimates run roughly -2.5 (weak) to +2.5 (strong)
+      {code:'CC.EST', label:'Control of corruption', fmt:'score'},
+      {code:'GE.EST', label:'Government effectiveness', fmt:'score'},
+      {code:'RL.EST', label:'Rule of law', fmt:'score'},
+      {code:'RQ.EST', label:'Regulatory quality', fmt:'score'},
+      {code:'VA.EST', label:'Voice & accountability', fmt:'score'},
+      {code:'PV.EST', label:'Political stability', fmt:'score'}
+    ]},
+    {key:'health', label:'Health (WHO)', cls:'health', indicators:[
+      // WHO Global Health Observatory — keyed by ISO3, not the World Bank's ISO2
+      {code:'NCD_BMI_30C', label:'Adult obesity', fmt:'pct', source:'who'},
+      {code:'WHS4_100', label:'Hospital beds /10k pop.', fmt:'num1', source:'who'},
+      {code:'SDGPM25', label:'PM2.5 air pollution (µg/m³)', fmt:'num1', source:'who'}
+    ]},
+    {key:'labor', label:'Labor (OECD)', cls:'labor', indicators:[
+      // OECD member/partner countries only — most low- and middle-income
+      // countries will show "—" here, that's expected, not a bug.
+      {code:'OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,1.0', label:'Unemployment rate (OECD)', fmt:'pct', source:'oecd'}
     ]}
   ];
+
+  // Flattened indicator list with category label attached — used for fetching
+  // and for building tidy export rows.
+  const ALL_INDICATORS = CATS.flatMap(cat => cat.indicators.map(ind => Object.assign({}, ind, {category: cat.label})));
+
+  // WHO and OECD key their data by ISO3 (World Bank uses ISO2 for everything else).
+  // Generated via pycountry against every a2 code present in ISO_MAP.
+  const ISO2_TO_ISO3 = {"AD":"AND","AE":"ARE","AF":"AFG","AG":"ATG","AI":"AIA","AL":"ALB","AM":"ARM","AO":"AGO","AQ":"ATA","AR":"ARG","AS":"ASM","AT":"AUT","AU":"AUS","AW":"ABW","AX":"ALA","AZ":"AZE","BA":"BIH","BB":"BRB","BD":"BGD","BE":"BEL","BF":"BFA","BG":"BGR","BH":"BHR","BI":"BDI","BJ":"BEN","BL":"BLM","BM":"BMU","BN":"BRN","BO":"BOL","BQ":"BES","BR":"BRA","BS":"BHS","BT":"BTN","BV":"BVT","BW":"BWA","BY":"BLR","BZ":"BLZ","CA":"CAN","CC":"CCK","CD":"COD","CF":"CAF","CG":"COG","CH":"CHE","CI":"CIV","CK":"COK","CL":"CHL","CM":"CMR","CN":"CHN","CO":"COL","CR":"CRI","CU":"CUB","CV":"CPV","CW":"CUW","CX":"CXR","CY":"CYP","CZ":"CZE","DE":"DEU","DJ":"DJI","DK":"DNK","DM":"DMA","DO":"DOM","DZ":"DZA","EC":"ECU","EE":"EST","EG":"EGY","EH":"ESH","ER":"ERI","ES":"ESP","ET":"ETH","FI":"FIN","FJ":"FJI","FK":"FLK","FM":"FSM","FO":"FRO","FR":"FRA","GA":"GAB","GB":"GBR","GD":"GRD","GE":"GEO","GF":"GUF","GG":"GGY","GH":"GHA","GI":"GIB","GL":"GRL","GM":"GMB","GN":"GIN","GP":"GLP","GQ":"GNQ","GR":"GRC","GS":"SGS","GT":"GTM","GU":"GUM","GW":"GNB","GY":"GUY","HK":"HKG","HM":"HMD","HN":"HND","HR":"HRV","HT":"HTI","HU":"HUN","ID":"IDN","IE":"IRL","IL":"ISR","IM":"IMN","IN":"IND","IO":"IOT","IQ":"IRQ","IR":"IRN","IS":"ISL","IT":"ITA","JE":"JEY","JM":"JAM","JO":"JOR","JP":"JPN","KE":"KEN","KG":"KGZ","KH":"KHM","KI":"KIR","KM":"COM","KN":"KNA","KP":"PRK","KR":"KOR","KW":"KWT","KY":"CYM","KZ":"KAZ","LA":"LAO","LB":"LBN","LC":"LCA","LI":"LIE","LK":"LKA","LR":"LBR","LS":"LSO","LT":"LTU","LU":"LUX","LV":"LVA","LY":"LBY","MA":"MAR","MC":"MCO","MD":"MDA","ME":"MNE","MF":"MAF","MG":"MDG","MH":"MHL","MK":"MKD","ML":"MLI","MM":"MMR","MN":"MNG","MO":"MAC","MP":"MNP","MQ":"MTQ","MR":"MRT","MS":"MSR","MT":"MLT","MU":"MUS","MV":"MDV","MW":"MWI","MX":"MEX","MY":"MYS","MZ":"MOZ","NA":"NAM","NC":"NCL","NE":"NER","NF":"NFK","NG":"NGA","NI":"NIC","NL":"NLD","NO":"NOR","NP":"NPL","NR":"NRU","NU":"NIU","NZ":"NZL","OM":"OMN","PA":"PAN","PE":"PER","PF":"PYF","PG":"PNG","PH":"PHL","PK":"PAK","PL":"POL","PM":"SPM","PN":"PCN","PR":"PRI","PS":"PSE","PT":"PRT","PW":"PLW","PY":"PRY","QA":"QAT","RE":"REU","RO":"ROU","RS":"SRB","RU":"RUS","RW":"RWA","SA":"SAU","SB":"SLB","SC":"SYC","SD":"SDN","SE":"SWE","SG":"SGP","SH":"SHN","SI":"SVN","SJ":"SJM","SK":"SVK","SL":"SLE","SM":"SMR","SN":"SEN","SO":"SOM","SR":"SUR","SS":"SSD","ST":"STP","SV":"SLV","SX":"SXM","SY":"SYR","SZ":"SWZ","TC":"TCA","TD":"TCD","TF":"ATF","TG":"TGO","TH":"THA","TJ":"TJK","TK":"TKL","TL":"TLS","TM":"TKM","TN":"TUN","TO":"TON","TR":"TUR","TT":"TTO","TV":"TUV","TW":"TWN","TZ":"TZA","UA":"UKR","UG":"UGA","UM":"UMI","US":"USA","UY":"URY","UZ":"UZB","VA":"VAT","VC":"VCT","VE":"VEN","VG":"VGB","VI":"VIR","VN":"VNM","VU":"VUT","WF":"WLF","WS":"WSM","YE":"YEM","YT":"MYT","ZA":"ZAF","ZM":"ZMB","ZW":"ZWE"};
 
   function formatValue(fmt, value){
     if(value === null || value === undefined) return null;
@@ -271,6 +381,8 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
       case 'yrs': return value.toFixed(1) + ' yrs';
       case 'ton': return value.toFixed(2) + ' t';
       case 'oe': return Math.round(value).toLocaleString() + ' kgoe';
+      case 'score': return (value >= 0 ? '+' : '') + value.toFixed(2);
+      case 'num1': return value.toFixed(1);
       default: return value.toLocaleString();
     }
   }
@@ -306,6 +418,37 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
   let autoRotate = true;
   let selectedId = null;
   let countryFeatures = [];
+
+  // ---------------- Compare mode state ----------------
+  const COMPARE_COLORS = ['#E7C767', '#4CB6A4', '#8CB3D9', '#C2695A'];
+  let compareMode = false;
+  let comparedCountries = []; // [{id, a2, name}]
+  let showCharts = false; // trend charts are opt-in; default is plain label/value rows
+
+  // ---------------- Year lookup state ----------------
+  let selectedYear = null; // null = "Latest"
+  let lastSingleFetch = null; // {a2, name, resultMap}
+  let lastCompareResultMap = null;
+
+  const yearSelect = document.getElementById('year-select');
+  (function populateYearSelect(){
+    const nowYear = 2024;
+    for(let y = nowYear; y >= 1990; y--){
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = String(y);
+      yearSelect.appendChild(opt);
+    }
+  })();
+
+  // Looks up the value for a given indicator result at a specific year.
+  // Falls back to the most recent value when year is null ("Latest").
+  function valueForYear(r, year){
+    if(!r || r.status !== 'ok') return null;
+    if(year === null) return {value: r.value, year: r.year};
+    const point = r.series.find(p => p.year === year);
+    return point ? {value: point.value, year: point.year} : null;
+  }
 
   function render(){
     projection.rotate(rotation);
@@ -430,11 +573,7 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
   // ---------------- Selection + dossier ----------------
   const dossier = document.getElementById('dossier');
 
-  function selectCountry(feature){
-    selectedId = feature.id;
-    gCountries.selectAll('path').classed('selected', d => d.id === selectedId);
-
-    // pause auto-rotation briefly and gently center on the country
+  function centerOn(feature){
     autoRotate = false;
     const centroid = d3.geoCentroid(feature);
     const targetRotation = [-centroid[0], -centroid[1] * 0.6, 0];
@@ -448,6 +587,17 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
         render();
       };
     }).on('end', () => { setTimeout(() => autoRotate = true, 4000); });
+  }
+
+  function selectCountry(feature){
+    if(compareMode){
+      toggleCompareCountry(feature);
+      return;
+    }
+
+    selectedId = feature.id;
+    gCountries.selectAll('path').classed('selected', d => d.id === selectedId);
+    centerOn(feature);
 
     const numeric = String(feature.id).padStart(3, '0');
     const iso = ISO_MAP[numeric];
@@ -461,7 +611,143 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
     fetchDossier(iso.a2, displayName);
   }
 
+  // ---------------- Compare mode ----------------
+  function toggleCompareCountry(feature){
+    const numeric = String(feature.id).padStart(3, '0');
+    const iso = ISO_MAP[numeric];
+    const displayName = (feature.properties && feature.properties.name) || (iso && iso.name) || 'Unknown territory';
+    if(!iso) return; // territories without a World Bank record can't be compared
+
+    const existingIdx = comparedCountries.findIndex(c => c.id === feature.id);
+    if(existingIdx !== -1){
+      comparedCountries.splice(existingIdx, 1);
+    }else{
+      if(comparedCountries.length >= 4){
+        const hint = document.getElementById('compare-hint-row');
+        hint.textContent = 'Max 4 countries — remove one to add another';
+        setTimeout(() => { hint.textContent = 'Click up to 4 countries to compare'; }, 2200);
+        return;
+      }
+      comparedCountries.push({id: feature.id, a2: iso.a2, name: displayName});
+      centerOn(feature);
+    }
+
+    gCountries.selectAll('path')
+      .classed('compared', d => comparedCountries.some(c => c.id === d.id))
+      .style('stroke', d => {
+        const idx = comparedCountries.findIndex(c => c.id === d.id);
+        return idx === -1 ? null : COMPARE_COLORS[idx];
+      });
+
+    renderCompareChips();
+
+    if(comparedCountries.length === 0){
+      lastCompareResultMap = null;
+      dossier.innerHTML = `<div class="dossier-empty"><span class="glyph">✦</span>Touch a country on the globe<br>to open its data dossier</div>`;
+    }else if(comparedCountries.length === 1){
+      lastCompareResultMap = null;
+      dossier.innerHTML = `<div class="compare-empty-note">One country selected — pick at least one more to compare.</div>`;
+    }else{
+      fetchComparisonDossier();
+    }
+  }
+
+  function renderCompareChips(){
+    const chips = document.getElementById('compare-chips');
+    chips.innerHTML = comparedCountries.map((c, i) => `
+      <div class="compare-chip">
+        <span class="swatch" style="background:${COMPARE_COLORS[i]}"></span>
+        <span class="name">${c.name}</span>
+        <span class="rm" data-id="${c.id}">✕</span>
+      </div>
+    `).join('');
+    chips.querySelectorAll('.rm').forEach(el => {
+      el.addEventListener('click', () => {
+        const feature = countryFeatures.find(f => f.id === el.dataset.id);
+        if(feature) toggleCompareCountry(feature);
+      });
+    });
+  }
+
+  async function fetchComparisonDossier(){
+    const requestId = comparedCountries.map(c => c.a2).join(',');
+    dossier.innerHTML = `<div class="compare-empty-note">Fetching indicators for ${comparedCountries.length} countries…</div>`;
+
+    const allIndicators = ALL_INDICATORS;
+    const perCountry = await Promise.all(comparedCountries.map(c =>
+      Promise.all(allIndicators.map(ind => fetchIndicatorSeries(c.a2, ISO2_TO_ISO3[c.a2], ind)))
+    ));
+
+    // bail if the comparison set changed while this was in flight
+    if(comparedCountries.map(c => c.a2).join(',') !== requestId) return;
+
+    const resultMap = comparedCountries.map((c, ci) => {
+      const m = {};
+      allIndicators.forEach((ind, i) => { m[ind.code] = perCountry[ci][i]; });
+      return m;
+    });
+
+    renderComparison(resultMap);
+  }
+
+  function renderComparison(resultMap){
+    lastCompareResultMap = resultMap;
+    const headRow = `<div class="compare-head-row">${comparedCountries.map((c, i) => `
+      <div class="compare-head-item"><span class="swatch" style="background:${COMPARE_COLORS[i]}"></span><span class="name">${c.name}</span></div>
+    `).join('')}</div>`;
+
+    const catsHtml = CATS.map(cat => `
+      <div class="cat ${cat.cls}">
+        <div class="cat-label">${cat.label}</div>
+        ${cat.indicators.map(ind => {
+          const perCountryResult = resultMap.map(m => m[ind.code]);
+          const naLabel = selectedYear !== null ? `no data for ${selectedYear}` : '—';
+          const valsHtml = perCountryResult.map(r => {
+            const yv = valueForYear(r, selectedYear);
+            const val = yv ? formatValue(ind.fmt, yv.value) : null;
+            return val
+              ? `<span class="cval">${val}<span class="cyr">${yv.year}</span></span>`
+              : `<span class="cval na">${naLabel}</span>`;
+          }).join('');
+
+          let spark = '';
+          if(showCharts){
+            const sparkEntries = perCountryResult
+              .map((r, i) => ({color: COMPARE_COLORS[i], series: (r && r.status === 'ok') ? r.series : []}))
+              .filter(e => e.series.length > 1);
+            spark = sparkEntries.length ? buildSparkline(sparkEntries, selectedYear) : '';
+          }
+
+          return `<div class="crow">
+            <div class="clabel">${ind.label}</div>
+            <div class="cvals">${valsHtml}</div>
+            ${spark}
+          </div>`;
+        }).join('')}
+      </div>
+    `).join('');
+
+    const yearNote = selectedYear !== null
+      ? `Showing ${selectedYear} where available <span class="year-badge">${selectedYear}</span>`
+      : 'Latest value and 1990–2024 trend per indicator';
+
+    dossier.innerHTML = `
+      <div class="dossier-head">
+        <div class="eyebrow">Comparing ${comparedCountries.length} countries</div>
+        ${headRow}
+        <div class="country-sub">${yearNote}</div>
+        ${exportButtonsHtml()}
+      </div>
+      ${catsHtml}
+    `;
+    const label = comparedCountries.map(c => c.a2).join('-').toLowerCase();
+    lastExportData = {label: `compare-${label}`, rows: buildExportRows(comparedCountries, resultMap)};
+    wireExportButtons();
+  }
+
   function renderNoData(name){
+    lastExportData = null;
+    lastSingleFetch = null;
     dossier.innerHTML = `
       <div class="dossier-head">
         <div class="eyebrow">No World Bank record</div>
@@ -489,23 +775,226 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
     `;
   }
 
-  async function fetchOne(a2, code){
+  // Fetches ~20yrs of history for one indicator. Returns latest value plus
+  // the full series (oldest -> newest) so we can draw trend sparklines.
+  async function fetchSeries(a2, code){
     try{
-      const res = await fetch(`https://api.worldbank.org/v2/country/${a2}/indicator/${code}?format=json&mrv=1`);
+      const res = await fetch(`https://api.worldbank.org/v2/country/${a2}/indicator/${code}?format=json&date=1990:2024&per_page=150`);
       if(!res.ok) return {status:'error', reason:'HTTP ' + res.status};
       const json = await res.json();
-      if(!json || !json[1] || !json[1][0] || json[1][0].value === null || json[1][0].value === undefined){
-        return {status:'nodata'};
-      }
-      return {status:'ok', value: json[1][0].value, year: json[1][0].date};
+      const rows = (json && json[1]) || [];
+      const series = rows
+        .filter(r => r.value !== null && r.value !== undefined)
+        .map(r => ({year: +r.date, value: r.value}))
+        .sort((a, b) => a.year - b.year);
+      if(series.length === 0) return {status:'nodata'};
+      const latest = series[series.length - 1];
+      return {status:'ok', value: latest.value, year: latest.year, series};
     }catch(e){
       return {status:'error', reason: e.message};
     }
   }
 
+  // WHO Global Health Observatory (OData). Keyed by ISO3. No key, no auth.
+  async function fetchWHOSeries(iso3, code){
+    try{
+      const res = await fetch(`https://ghoapi.azureedge.net/api/${code}?$filter=SpatialDim eq '${iso3}' and Dim1 eq null`);
+      if(!res.ok) return {status:'error', reason:'HTTP ' + res.status};
+      const json = await res.json();
+      const rows = (json && json.value) || [];
+      const byYear = {};
+      rows.forEach(r => {
+        const year = r.TimeDim || (r.TimeDimensionBegin ? +String(r.TimeDimensionBegin).slice(0,4) : null);
+        if(year && r.NumericValue !== null && r.NumericValue !== undefined){
+          byYear[year] = r.NumericValue; // last write wins if duplicated
+        }
+      });
+      const series = Object.keys(byYear).map(y => ({year:+y, value: byYear[y]})).sort((a,b) => a.year - b.year);
+      if(series.length === 0) return {status:'nodata'};
+      const latest = series[series.length - 1];
+      return {status:'ok', value: latest.value, year: latest.year, series};
+    }catch(e){
+      return {status:'error', reason: e.message};
+    }
+  }
+
+  // OECD SDMX-JSON. Coverage is limited to OECD members/partners — most
+  // countries will legitimately come back empty here, that's expected.
+  async function fetchOECDSeries(iso3, dataflowPath){
+    try{
+      const url = `https://sdmx.oecd.org/public/rest/data/${dataflowPath}/${iso3}..PT_LF_SUB._Z.Y._T.Y_GE15..M?startPeriod=1990&dimensionAtObservation=AllDimensions&format=jsondata`;
+      const res = await fetch(url);
+      if(!res.ok) return {status: res.status === 404 ? 'nodata' : 'error', reason:'HTTP ' + res.status};
+      const json = await res.json();
+      const dataSet = json.data && json.data.dataSets && json.data.dataSets[0];
+      const structure = json.data && json.data.structures && json.data.structures[0];
+      if(!dataSet || !structure) return {status:'nodata'};
+      const obsDims = structure.dimensions.observation;
+      const timeIdx = obsDims.findIndex(d => d.id === 'TIME_PERIOD');
+      const timeValues = timeIdx !== -1 ? obsDims[timeIdx].values : null;
+      const observations = dataSet.observations || {};
+      const byYear = {};
+      Object.keys(observations).forEach(key => {
+        const idxs = key.split(':').map(Number);
+        const period = timeValues && timeValues[idxs[timeIdx]];
+        const val = observations[key][0];
+        if(period && val !== null && val !== undefined){
+          const year = parseInt(String(period.id).slice(0, 4), 10);
+          if(!isNaN(year)) byYear[year] = val; // keep last observation seen per year
+        }
+      });
+      const series = Object.keys(byYear).map(y => ({year:+y, value: byYear[y]})).sort((a,b) => a.year - b.year);
+      if(series.length === 0) return {status:'nodata'};
+      const latest = series[series.length - 1];
+      return {status:'ok', value: latest.value, year: latest.year, series};
+    }catch(e){
+      return {status:'error', reason: e.message};
+    }
+  }
+
+  // Dispatches to the right source based on ind.source; World Bank (incl. WGI) is the default.
+  function fetchIndicatorSeries(a2, iso3, ind){
+    if(ind.source === 'who') return iso3 ? fetchWHOSeries(iso3, ind.code) : Promise.resolve({status:'nodata'});
+    if(ind.source === 'oecd') return iso3 ? fetchOECDSeries(iso3, ind.code) : Promise.resolve({status:'nodata'});
+    return fetchSeries(a2, ind.code);
+  }
+
+  // Keeps axis labels short: whole numbers for larger magnitudes, one
+  // decimal place for small ones (e.g. WGI scores, percentages).
+  function formatAxisNum(v){
+    if(Math.abs(v) >= 1000) return Math.round(v).toLocaleString();
+    if(Math.abs(v) >= 10) return v.toFixed(0);
+    return v.toFixed(1);
+  }
+
+  // Builds a labeled year-by-year line chart. `entries` is [{color, series}].
+  // Domain is shared across all entries so overlaid series compare cleanly.
+  function buildSparkline(entries, highlightYear){
+    const w = 300, h = 92, padL = 4, padR = 4, padTop = 9, padBottom = 20;
+    const allPts = entries.flatMap(e => e.series);
+    if(allPts.length < 2) return '';
+    const years = allPts.map(p => p.year);
+    const vals = allPts.map(p => p.value);
+    const x0 = Math.min(...years), x1 = Math.max(...years);
+    let y0 = Math.min(...vals), y1 = Math.max(...vals);
+    if(y0 === y1){ y0 -= 1; y1 += 1; }
+    const plotH = h - padTop - padBottom;
+    const plotBottom = padTop + plotH;
+    const sx = year => x1 === x0 ? w/2 : padL + (year - x0) / (x1 - x0) * (w - padL - padR);
+    const sy = val => plotBottom - (val - y0) / (y1 - y0) * plotH;
+
+    const paths = entries.map(e => {
+      if(e.series.length < 2) return '';
+      const d = e.series.map((p, i) => (i === 0 ? 'M' : 'L') + sx(p.year).toFixed(1) + ',' + sy(p.value).toFixed(1)).join(' ');
+      const last = e.series[e.series.length - 1];
+      return `<path d="${d}" fill="none" stroke="${e.color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>` +
+             `<circle cx="${sx(last.year).toFixed(1)}" cy="${sy(last.value).toFixed(1)}" r="2.2" fill="${e.color}"/>`;
+    }).join('');
+
+    const midVal = (y0 + y1) / 2;
+    const gridline = `<line x1="${padL}" y1="${sy(midVal).toFixed(1)}" x2="${w - padR}" y2="${sy(midVal).toFixed(1)}" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="2,2"/>`;
+    const axisLine = `<line x1="${padL}" y1="${plotBottom}" x2="${w - padR}" y2="${plotBottom}" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>`;
+
+    let highlight = '';
+    if(highlightYear !== null && highlightYear !== undefined && highlightYear >= x0 && highlightYear <= x1){
+      const hx = sx(highlightYear).toFixed(1);
+      highlight = `<line x1="${hx}" y1="${padTop}" x2="${hx}" y2="${plotBottom}" stroke="rgba(231,199,103,0.55)" stroke-width="1" stroke-dasharray="2,2"/>`;
+      entries.forEach(e => {
+        const p = e.series.find(pt => pt.year === highlightYear);
+        if(p) highlight += `<circle cx="${hx}" cy="${sy(p.value).toFixed(1)}" r="3.4" fill="none" stroke="${e.color}" stroke-width="1.6"/>`;
+      });
+    }
+
+    const font = `font-size="9" font-family="'IBM Plex Mono',monospace" fill="var(--ink-faint)"`;
+    const labels = `
+      <text x="${padL}" y="${h - 5}" ${font}>${x0}</text>
+      <text x="${w - padR}" y="${h - 5}" ${font} text-anchor="end">${x1}</text>
+      <text x="${padL}" y="${padTop + 3}" ${font}>${formatAxisNum(y1)}</text>
+      <text x="${padL}" y="${plotBottom - 1}" ${font}>${formatAxisNum(y0)}</text>
+    `;
+
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${gridline}${axisLine}${highlight}${paths}${labels}</svg>`;
+  }
+
+  // ---------------- Export ----------------
+  let lastExportData = null; // {label, rows: [{country, iso2, category, indicator, indicator_code, year, value}]}
+
+  function csvEscape(v){
+    const s = String(v === null || v === undefined ? '' : v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function rowsToCSV(rows){
+    const headers = ['country', 'iso2', 'category', 'indicator', 'indicator_code', 'year', 'value'];
+    const lines = [headers.join(',')];
+    rows.forEach(r => lines.push(headers.map(h => csvEscape(r[h])).join(',')));
+    return lines.join('\n');
+  }
+
+  function downloadFile(content, filename, mime){
+    const blob = new Blob([content], {type: mime});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportCurrentCSV(){
+    if(!lastExportData || !lastExportData.rows.length) return;
+    downloadFile(rowsToCSV(lastExportData.rows), `meridian-${lastExportData.label}.csv`, 'text/csv;charset=utf-8');
+  }
+
+  function exportCurrentJSON(){
+    if(!lastExportData || !lastExportData.rows.length) return;
+    const payload = {
+      source: 'World Bank Open Data API',
+      generated_at: new Date().toISOString(),
+      note: 'Prototype export — verify against primary sources before citing.',
+      rows: lastExportData.rows
+    };
+    downloadFile(JSON.stringify(payload, null, 2), `meridian-${lastExportData.label}.json`, 'application/json');
+  }
+
+  function exportButtonsHtml(){
+    return `<div class="export-row">
+      <button type="button" class="export-btn" data-export="csv">⬇ CSV</button>
+      <button type="button" class="export-btn" data-export="json">⬇ JSON</button>
+    </div>`;
+  }
+
+  function wireExportButtons(){
+    dossier.querySelectorAll('[data-export]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if(btn.dataset.export === 'csv') exportCurrentCSV();
+        else exportCurrentJSON();
+      });
+    });
+  }
+
+  // Builds tidy (long-format) rows: one row per country × indicator × year.
+  function buildExportRows(countries, resultMapByCountry){
+    const rows = [];
+    countries.forEach((c, ci) => {
+      const resultMap = resultMapByCountry[ci];
+      ALL_INDICATORS.forEach(ind => {
+        const r = resultMap[ind.code];
+        if(r && r.status === 'ok'){
+          r.series.forEach(p => rows.push({
+            country: c.name, iso2: c.a2, category: ind.category,
+            indicator: ind.label, indicator_code: ind.code,
+            year: p.year, value: p.value
+          }));
+        }
+      });
+    });
+    return rows;
+  }
+
   async function fetchDossier(a2, name){
-    const allIndicators = CATS.flatMap(c => c.indicators);
-    const results = await Promise.all(allIndicators.map(ind => fetchOne(a2, ind.code)));
+    const allIndicators = ALL_INDICATORS;
+    const iso3 = ISO2_TO_ISO3[a2];
+    const results = await Promise.all(allIndicators.map(ind => fetchIndicatorSeries(a2, iso3, ind)));
     const resultMap = {};
     allIndicators.forEach((ind, i) => resultMap[ind.code] = results[i]);
 
@@ -516,6 +1005,8 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
     const allErrored = results.length > 0 && results.every(r => r.status === 'error');
     if(allErrored){
       apiReachable = false;
+      lastExportData = null;
+      lastSingleFetch = null;
       dossier.innerHTML = `
         <div class="dossier-head">
           <div class="eyebrow">${a2} · Connection problem</div>
@@ -528,30 +1019,107 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
       return;
     }
     apiReachable = true;
+    lastSingleFetch = {a2, name, resultMap};
+    renderSingleDossier();
+  }
+
+  function renderSingleDossier(){
+    if(!lastSingleFetch) return;
+    const {a2, name, resultMap} = lastSingleFetch;
 
     let catsHtml = CATS.map(cat => `
       <div class="cat ${cat.cls}">
         <div class="cat-label">${cat.label}</div>
         ${cat.indicators.map(ind => {
           const r = resultMap[ind.code];
-          const val = (r && r.status === 'ok') ? formatValue(ind.fmt, r.value) : null;
-          return `<div class="row">
-            <span class="label">${ind.label}</span>
-            <span>${val ? `<span class="value">${val}</span><span class="yr">${r.year}</span>` : `<span class="value na">—</span>`}</span>
+          const yv = valueForYear(r, selectedYear);
+          const val = yv ? formatValue(ind.fmt, yv.value) : null;
+          const naLabel = selectedYear !== null ? `no data for ${selectedYear}` : '—';
+          const valueHtml = val ? `<span class="value">${val}</span><span class="yr">${yv.year}</span>` : `<span class="value na">${naLabel}</span>`;
+
+          if(!showCharts){
+            return `<div class="row">
+              <span class="label">${ind.label}</span>
+              <span>${valueHtml}</span>
+            </div>`;
+          }
+
+          const spark = (r && r.status === 'ok' && r.series.length > 1)
+            ? buildSparkline([{color: '#E7C767', series: r.series}], selectedYear)
+            : '';
+          return `<div class="row" style="flex-direction:column;align-items:stretch;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+              <span class="label">${ind.label}</span>
+              <span>${valueHtml}</span>
+            </div>
+            ${spark}
           </div>`;
         }).join('')}
       </div>
     `).join('');
 
+    const yearNote = selectedYear !== null
+      ? `Showing ${selectedYear} where available <span class="year-badge">${selectedYear}</span>`
+      : 'Most recent available value per indicator';
+
     dossier.innerHTML = `
       <div class="dossier-head">
-        <div class="eyebrow">${a2} · World Bank series</div>
+        <div class="eyebrow">${a2} · Live indicators</div>
         <div class="country-name">${name}</div>
-        <div class="country-sub">Most recent available value per indicator</div>
+        <div class="country-sub">${yearNote}</div>
+        ${exportButtonsHtml()}
       </div>
       ${catsHtml}
     `;
+    lastExportData = {label: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), rows: buildExportRows([{name, a2}], [resultMap])};
+    wireExportButtons();
   }
+
+  yearSelect.addEventListener('change', () => {
+    selectedYear = yearSelect.value === 'latest' ? null : parseInt(yearSelect.value, 10);
+    if(compareMode && lastCompareResultMap){
+      renderComparison(lastCompareResultMap);
+    }else if(!compareMode && lastSingleFetch){
+      renderSingleDossier();
+    }
+  });
+
+  // ---------------- Trend charts toggle (opt-in, off by default) ----------------
+  const chartToggleBtn = document.getElementById('chart-toggle');
+  chartToggleBtn.addEventListener('click', () => {
+    showCharts = !showCharts;
+    chartToggleBtn.classList.toggle('active', showCharts);
+    chartToggleBtn.textContent = showCharts ? '📈 Trend charts: on' : '📈 Trend charts: off';
+    if(compareMode && lastCompareResultMap){
+      renderComparison(lastCompareResultMap);
+    }else if(!compareMode && lastSingleFetch){
+      renderSingleDossier();
+    }
+  });
+
+  // ---------------- Compare mode toggle ----------------
+  const compareToggleBtn = document.getElementById('compare-toggle');
+  compareToggleBtn.addEventListener('click', () => {
+    compareMode = !compareMode;
+    compareToggleBtn.classList.toggle('active', compareMode);
+    compareToggleBtn.textContent = compareMode ? '✦ Compare mode: on' : '✦ Compare mode: off';
+    document.getElementById('compare-hint-row').style.display = compareMode ? 'block' : 'none';
+
+    if(!compareMode){
+      // leaving compare mode: clear selection, restore normal styling
+      comparedCountries = [];
+      lastCompareResultMap = null;
+      renderCompareChips();
+      gCountries.selectAll('path').classed('compared', false).style('stroke', null);
+      dossier.innerHTML = `<div class="dossier-empty"><span class="glyph">✦</span>Touch a country on the globe<br>to open its data dossier</div>`;
+    }else{
+      // entering compare mode: drop any single-country selection
+      selectedId = null;
+      lastSingleFetch = null;
+      gCountries.selectAll('path').classed('selected', false);
+      dossier.innerHTML = `<div class="compare-empty-note">Click up to 4 countries on the globe to compare their indicators side by side.</div>`;
+    }
+  });
 
   // ---------------- Search ----------------
   const searchInput = document.getElementById('search');
