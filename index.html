@@ -1878,6 +1878,23 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
         header.innerHTML = '<span class="country-group-toggle">▶</span><span>' + escapeHtml(label) + '</span><span class="country-group-tally">' + selectedInGroup + '/' + inGroup.length + '</span>';
         header.addEventListener('click', () => groupEl.classList.toggle('expanded'));
 
+        // Per-group Select All / Clear Group actions (Issue 2)
+        const actions = document.createElement('div');
+        actions.className = 'country-group-actions';
+        actions.style.cssText = 'display:flex;gap:6px;padding:4px 0 6px 18px;';
+        const selBtn = document.createElement('button');
+        selBtn.type = 'button';
+        selBtn.className = 'country-picker-action';
+        selBtn.style.cssText = 'font-size:10px;padding:3px 7px;';
+        selBtn.textContent = 'Select All';
+        const clrBtn = document.createElement('button');
+        clrBtn.type = 'button';
+        clrBtn.className = 'country-picker-action';
+        clrBtn.style.cssText = 'font-size:10px;padding:3px 7px;';
+        clrBtn.textContent = 'Clear Group';
+        actions.appendChild(selBtn);
+        actions.appendChild(clrBtn);
+
         const content = document.createElement('div');
         content.className = 'country-group-content';
         inGroup.forEach(c => {
@@ -1895,7 +1912,24 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
           content.appendChild(item);
         });
 
+        selBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          inGroup.forEach(c => pickerSelected.add(c.code));
+          updateCount();
+          // update all checkboxes in this group
+          content.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = true; });
+          header.querySelector('.country-group-tally').textContent = inGroup.length + '/' + inGroup.length;
+        });
+        clrBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          inGroup.forEach(c => pickerSelected.delete(c.code));
+          updateCount();
+          content.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; });
+          header.querySelector('.country-group-tally').textContent = '0/' + inGroup.length;
+        });
+
         groupEl.appendChild(header);
+        groupEl.appendChild(actions);
         groupEl.appendChild(content);
         frag.appendChild(groupEl);
       });
@@ -2026,86 +2060,217 @@ const WORLD_TOPOLOGY = {"type":"Topology","objects":{"countries":{"type":"Geomet
 
   let lastIndicatorResults = null;
 
+  // --- Issue 1 fix: robust batched fetching with per-country fallback ---
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  async function fetchWithRetry(url, retries = 6){
+    let lastErr;
+    for(let attempt = 0; attempt <= retries; attempt++){
+      try{
+        const res = await fetch(url, {mode:'cors', cache:'no-store'});
+        if(res.status === 429){
+          const retryAfter = parseInt(res.headers.get('Retry-After')||'0',10);
+          const waitMs = retryAfter ? retryAfter*1000 : (1000*Math.pow(1.8, attempt) + Math.random()*500);
+          if(attempt < retries){ await sleep(waitMs); continue; }
+          throw new Error('Rate limited (429)');
+        }
+        if(res.status>=500 && res.status<=599){
+          if(attempt < retries){ await sleep(800*Math.pow(1.8, attempt)+Math.random()*600); continue; }
+        }
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        return res;
+      }catch(e){
+        lastErr = e;
+        if(attempt < retries){
+          await sleep(700*Math.pow(1.8, attempt)+Math.random()*800);
+          continue;
+        }
+        throw lastErr;
+      }
+    }
+    throw lastErr;
+  }
+
+  async function fetchSingleCountry(indicatorId, iso2, startYear, endYear){
+    const base = 'https://api.worldbank.org/v2/country/'+iso2+'/indicator/'+indicatorId+'?format=json&date='+startYear+':'+endYear+'&per_page=1000';
+    let page=1, pages=1, rows=[];
+    do{
+      const res = await fetchWithRetry(base+'&page='+page, 4);
+      const json = await res.json();
+      const meta = json && json[0] ? json[0] : {};
+      if(meta && meta.message && meta.message[0] && meta.message[0].value) throw new Error(meta.message[0].value);
+      pages = meta.pages || 1;
+      rows = rows.concat((json && json[1])||[]);
+      page++;
+      if(page<=pages) await sleep(150);
+    }while(page<=pages);
+    return rows;
+  }
+
   async function fetchIndicatorData(indicator){
     const countries = getPickerSelectedCountries();
-    const startYear = parseInt(document.getElementById('ind-year-start').value, 10);
-    const endYear = parseInt(document.getElementById('ind-year-end').value, 10);
+    const startYear = parseInt(document.getElementById('ind-year-start').value,10);
+    const endYear = parseInt(document.getElementById('ind-year-end').value,10);
     const statusEl = document.getElementById('ind-fetch-status');
     const resultsWrap = document.getElementById('ind-results-wrap');
     const fetchBtn = document.getElementById('ind-fetch-btn');
 
-    if(countries.length === 0){
-      statusEl.textContent = 'Please select at least one country.';
-      statusEl.style.color = 'var(--red-soft)';
-      return;
+    if(countries.length===0){
+      statusEl.textContent='Please select at least one country.';
+      statusEl.style.color='var(--red-soft)'; return;
     }
-    if(isNaN(startYear) || isNaN(endYear) || startYear > endYear){
-      statusEl.textContent = 'Invalid year range.';
-      statusEl.style.color = 'var(--red-soft)';
-      return;
+    if(isNaN(startYear)||isNaN(endYear)||startYear>endYear){
+      statusEl.textContent='Invalid year range.';
+      statusEl.style.color='var(--red-soft)'; return;
     }
 
-    fetchBtn.disabled = true;
-    statusEl.textContent = 'Fetching…';
-    statusEl.style.color = 'var(--ink-faint)';
-    resultsWrap.style.display = 'none';
+    fetchBtn.disabled=true;
+    statusEl.textContent='Fetching…';
+    statusEl.style.color='var(--ink-faint)';
+    resultsWrap.style.display='none';
 
-    const countryStr = countries.join(';');
-    const baseUrl = 'https://api.worldbank.org/v2/country/' + countryStr + '/indicator/' + indicator.id
-      + '?format=json&date=' + startYear + ':' + endYear + '&per_page=1000';
+    const BATCH_SIZE = 12; // very small for reliability
+    const batches=[];
+    for(let i=0;i<countries.length;i+=BATCH_SIZE) batches.push(countries.slice(i,i+BATCH_SIZE));
+
+    let rawRows=[];
+    let recoveredRows=0;
+    let failedBatchesInfo=[];
 
     try{
-      // Pull every page the World Bank API reports before building the file.
-      let page = 1, totalPages = 1, rawRows = [];
-      do{
-        const res = await fetch(baseUrl + '&page=' + page);
-        if(!res.ok) throw new Error('HTTP ' + res.status);
-        const json = await res.json();
-        const meta = json && json[0] ? json[0] : {};
-        totalPages = meta.pages || 1;
-        rawRows = rawRows.concat((json && json[1]) || []);
-        if(totalPages > 1) statusEl.textContent = 'Fetching… page ' + page + ' of ' + totalPages;
-        page++;
-      } while(page <= totalPages);
+      for(let bIdx=0;bIdx<batches.length;bIdx++){
+        const batch = batches[bIdx];
+        const countryStr = batch.join(';');
+        const baseUrl = 'https://api.worldbank.org/v2/country/'+countryStr+'/indicator/'+indicator.id+'?format=json&date='+startYear+':'+endYear+'&per_page=1000';
 
-      // Keep missing values in the dataset (as null) rather than dropping
-      // them, so gaps in a country's time series are visible rather than
-      // silently disappearing from the export.
-      const data = rawRows
-        .map(r => ({
-          country: r.country && r.country.value ? r.country.value : (r.country || ''),
-          countryCode: r.countryiso3code || '',
-          year: parseInt(r.date, 10),
-          value: (r.value === null || r.value === undefined) ? null : r.value,
-          indicator: indicator.name,
-          indicatorCode: indicator.id
-        }))
-        .sort((a, b) => {
-          if(a.country !== b.country) return a.country.localeCompare(b.country);
-          return b.year - a.year;
-        });
+        let page=1, totalPages=1;
+        let batchRows=[];
+        let batchSuccess=true;
 
-      lastIndicatorResults = data;
-      fetchBtn.disabled = false;
+        try{
+          do{
+            const url = baseUrl+'&page='+page;
+            statusEl.textContent='Fetching batch '+(bIdx+1)+'/'+batches.length+(totalPages>1?' – page '+page+'/'+totalPages:'')+'… ('+rawRows.length+' rows)';
+            const res = await fetchWithRetry(url, 5);
+            const json = await res.json();
+            const meta = json && json[0] ? json[0] : {};
+            if(meta && meta.message && meta.message[0] && meta.message[0].value) throw new Error(meta.message[0].value);
+            totalPages = meta.pages||1;
+            batchRows = batchRows.concat((json&&json[1])||[]);
+            page++;
+            if(page<=totalPages) await sleep(350);
+          }while(page<=totalPages);
+        }catch(batchErr){
+          // Fallback: try each country individually (most reliable)
+          console.warn('Batch '+ (bIdx+1) +' failed, falling back to per-country:', batchErr.message);
+          statusEl.textContent='Batch '+(bIdx+1)+' had a network hiccup – recovering country by country…';
+          let perCountryRows=[];
+          let perCountryFailures=0;
+          for(let ci=0; ci<batch.length; ci++){
+            const iso2 = batch[ci];
+            try{
+              const r = await fetchSingleCountry(indicator.id, iso2, startYear, endYear);
+              perCountryRows = perCountryRows.concat(r);
+              statusEl.textContent='Recovering batch '+(bIdx+1)+'/'+batches.length+': '+iso2+' ('+(ci+1)+'/'+batch.length+') – '+ (rawRows.length+perCountryRows.length) +' rows';
+            }catch(_e){
+              perCountryFailures++;
+            }
+            await sleep(250);
+          }
+          if(perCountryRows.length>0){
+            batchRows = perCountryRows;
+            recoveredRows += perCountryRows.length;
+            if(perCountryFailures>0){
+              failedBatchesInfo.push({batch, failedCount: perCountryFailures});
+            }
+            batchSuccess = true;
+          }else{
+            batchSuccess = false;
+            failedBatchesInfo.push({batch, error: batchErr.message});
+          }
+        }
 
-      if(data.length === 0){
-        statusEl.textContent = 'No data available for the selected indicator, countries, and year range.';
-        statusEl.style.color = 'var(--red-soft)';
-        resultsWrap.style.display = 'block';
+        if(batchSuccess){
+          rawRows = rawRows.concat(batchRows);
+        }
+        if(bIdx < batches.length-1) await sleep(700);
+      }
+
+      // Build final dataset preserving all requested countries/years
+      let data = rawRows.map(r=>({
+        country: r.country && r.country.value ? r.country.value : (r.country||''),
+        countryCode: r.countryiso3code||'',
+        countryIso2: (r.country && r.country.id) ? r.country.id : '',
+        year: parseInt(r.date,10),
+        value: (r.value===null||r.value===undefined) ? null : r.value,
+        indicator: indicator.name,
+        indicatorCode: indicator.id
+      }));
+
+      try{
+        const requestedSet = new Set(countries);
+        const seenKeys = new Set(data.map(d=>(d.countryIso2||d.countryCode)+'|'+d.year));
+        const metaByCode={};
+        (countryMeta||[]).forEach(m=>{ metaByCode[m.code]=m; });
+        for(const iso2 of requestedSet){
+          const meta = metaByCode[iso2];
+          const cName = meta ? meta.name : iso2;
+          const cCode3 = meta ? meta.iso3 : '';
+          for(let y=startYear;y<=endYear;y++){
+            const k1=iso2+'|'+y;
+            const k2=cCode3+'|'+y;
+            if(!seenKeys.has(k1)&&!seenKeys.has(k2)){
+              data.push({country:cName,countryCode:cCode3,countryIso2:iso2,year:y,value:null,indicator:indicator.name,indicatorCode:indicator.id});
+            }
+          }
+        }
+      }catch(_e){}
+
+      data.sort((a,b)=> a.country!==b.country ? a.country.localeCompare(b.country) : b.year-a.year);
+
+      lastIndicatorResults=data;
+      fetchBtn.disabled=false;
+
+      if(data.length===0){
+        statusEl.textContent='No data available for the selected indicator, countries, and year range.';
+        statusEl.style.color='var(--red-soft)';
+        resultsWrap.style.display='block';
         renderResultsTable(data);
         return;
       }
 
-      const missingCount = data.filter(d => d.value === null).length;
-      statusEl.textContent = data.length + ' data points retrieved' + (missingCount ? ' (' + missingCount + ' missing)' : '');
-      statusEl.style.color = 'var(--teal)';
+      const missingCount = data.filter(d=>d.value===null).length;
+      const realMissing = missingCount; // includes true gaps + any unrecovered
+      if(failedBatchesInfo.length===0){
+        statusEl.textContent = data.length+' data points retrieved'+(missingCount?' ('+missingCount+' missing)':'')+(batches.length>1?' across '+batches.length+' batches':'')+(recoveredRows?' – '+recoveredRows+' rows recovered via per-country fallback':'');
+        statusEl.style.color='var(--teal)';
+      }else{
+        statusEl.textContent = data.length+' data points retrieved ('+missingCount+' missing, '+failedBatchesInfo.length+' batches had partial network issues – retried per-country). All requested countries preserved. If missing is unusually high, click Fetch again.';
+        statusEl.style.color='var(--gold-bright)';
+      }
       renderResultsTable(data);
-      resultsWrap.style.display = 'block';
-      document.getElementById('ind-download-status').textContent = '';
+      resultsWrap.style.display='block';
+      document.getElementById('ind-download-status').textContent='';
     }catch(err){
-      fetchBtn.disabled = false;
-      statusEl.textContent = 'Error: ' + err.message;
-      statusEl.style.color = 'var(--red-soft)';
+      fetchBtn.disabled=false;
+      if(rawRows.length){
+        const partial = rawRows.map(r=>({
+          country: r.country && r.country.value ? r.country.value : (r.country||''),
+          countryCode: r.countryiso3code||'',
+          year: parseInt(r.date,10),
+          value: (r.value===null||r.value===undefined)?null:r.value,
+          indicator: indicator.name,
+          indicatorCode: indicator.id
+        })).sort((a,b)=> a.country!==b.country ? a.country.localeCompare(b.country) : b.year-a.year);
+        lastIndicatorResults=partial;
+        renderResultsTable(partial);
+        resultsWrap.style.display='block';
+        statusEl.textContent='Partial data: '+partial.length+' rows. Last error: '+err.message+'. Click Fetch again to recover remaining countries.';
+        statusEl.style.color='var(--gold-bright)';
+      }else{
+        statusEl.textContent='Error fetching data: '+err.message+'. Please retry – request will auto-retry with smaller batches.';
+        statusEl.style.color='var(--red-soft)';
+      }
     }
   }
 
